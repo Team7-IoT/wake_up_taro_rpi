@@ -7,7 +7,7 @@ bleno.on('stateChange', function(state) {
   console.log('on -> stateChange: ' + state);
 
   if (state === 'poweredOn') {
-    bleno.startAdvertising('Battery', [primaryService.uuid]);
+    bleno.startAdvertising('wake_up_taro', [primaryService.uuid]);
   } else {
     bleno.stopAdvertising();
   }

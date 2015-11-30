@@ -16,13 +16,12 @@ util.inherits(WUTNotifyCharacteristic, Characteristic);
 
 WUTNotifyCharacteristic.prototype.onSubscribe = function(maxValueSize, updateValueCallback) {
   console.log('on -> subscribe');
-
   this._updateValueCallback = updateValueCallback;
   setTimeout(
   	function(self) {
  		console.log('on -> timer');
-  		self._updateValueCallback([0, 1, 2, 3]);
-  	}, 3000, this);
+  		self._updateValueCallback(new Buffer([0, 1, 2, 3]));
+  	}, 2000, this);
 };
 
 WUTNotifyCharacteristic.prototype.onUnsubscribe = function() {
