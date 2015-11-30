@@ -40,4 +40,3 @@ bleno.on('accept', function(clientAddress) {
 bleno.on('disconnect', function(clientAddress) {
     console.log('on -> disconnect : ' + clientAddress);
 });
-
