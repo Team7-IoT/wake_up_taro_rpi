@@ -14,6 +14,9 @@ public:
 	// センサ電源 On/Off	
 	void powerOn();
 	void powerOff();
+
+	// 測距開始
+	double sonar();
 	
 private:
 	// デバイス初期化,解放

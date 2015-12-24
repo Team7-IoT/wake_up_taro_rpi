@@ -1,5 +1,6 @@
 #include "hcsr04drv.h"
 #include <bcm2835.h>
+#include <chrono>
 
 // コンストラクタ
 HCSR04::HCSR04(PinNumber pw, PinNumber trig, PinNumber echo)
@@ -78,4 +79,59 @@ void HCSR04::powerOff()
 
     // 電源投入完了
     mPowerOn = false;
+}
+
+double HCSR04::sonar()
+{
+	using clock = std::chrono::high_resolution_clock;
+	int cnt = 0; // ノイズ対策のため、n回連続で同一信号を検出するまで待機
+
+	if(!mPowerOn) return std::numeric_limits<double>::infinity();
+
+	// Trigを10μsecの間Highとする
+	bcm2835_gpio_write(mPinTrig, HIGH);
+	bcm2835_delayMicroseconds(10);
+	bcm2835_gpio_write(mPinTrig, LOW);
+	
+	// EchoがHighになるまで待機
+	cnt = 0;
+	auto low_high_st = clock::now();
+	while(true) {
+		if(std::chrono::duration_cast<std::chrono::milliseconds>(clock::now()-low_high_st).count() > 20/*[msec]*/) {
+			// タイムアウト : Low -> High 
+			return std::numeric_limits<double>::infinity();
+		}
+		auto level = bcm2835_gpio_lev(mPinEcho);
+		if(level == HIGH) {
+			++cnt;
+			if(cnt == 3) break;
+		} else {
+			cnt = 0;
+		}
+		bcm2835_delayMicroseconds(1); // busy-loop対策で1μsecは待機
+	}
+	
+	// EchoがHigh -> Lowになる時間を計測
+	auto high_low_st = clock::now();
+	while(true) {
+        if(std::chrono::duration_cast<std::chrono::milliseconds>(clock::now()-high_low_st).count() > 20/*[msec]*/) {
+            // タイムアウト : High -> Low
+            return std::numeric_limits<double>::infinity();
+        }
+        auto level = bcm2835_gpio_lev(mPinEcho);
+        if(level == LOW) {
+            ++cnt;
+            if(cnt == 3) break;
+        } else {
+            cnt = 0;
+        }
+        bcm2835_delayMicroseconds(1); // busy-loop対策で1μsecは待機
+    }
+	auto high_low_ed = clock::now();
+
+	bcm2835_delayMicroseconds(100); // 連続した読み取り時の誤動作対策に1090μsec待機	
+
+	double t = std::chrono::duration_cast<std::chrono::microseconds>(high_low_ed - high_low_st).count(); // [μsec]
+	double d = t * 340 / 1000 / 2; // 音速=340[msec/sec]と仮定 & t = 往復に要する時間[μsec]
+	return d; // 単位 : [mm]
 }
