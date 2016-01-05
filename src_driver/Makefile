@@ -11,4 +11,4 @@ $(OUT): $(OBJS) $(HEADERS)
 
 .PHONY: clean
 clean:
-	rm -f *.o $(OUT)
+	rm -f $(OBJS) $(OUT)
