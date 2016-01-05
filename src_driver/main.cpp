@@ -28,13 +28,14 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, signal_handler);
 	
 	// BCM2835ライブラリ初期化
-	bcm2835_init();
+	if(!bcm2835_init()) {
+		return -1; // failed : cannot initialize bcm2835
+	}
 
 	// HC-SR04ドライバ生成, 初期化
 	auto driver = std::make_unique<HCSR04>(PIN_SW, PIN_TRIG, PIN_ECHO);
-
+	
 	// TODO : センサ制御コード
-	driver->powerOn();
 	while(!signaled) {
 		double dist = driver->sonar();
 		printf("%ld [mm] \n", (int)dist);

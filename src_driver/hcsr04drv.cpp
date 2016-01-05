@@ -1,6 +1,12 @@
 #include "hcsr04drv.h"
 #include <bcm2835.h>
 #include <chrono>
+#include <cfloat>
+
+static constexpr int POWER_ON_DELAY_MSEC  = 50; // 電源投入後待機時間[msec]
+static constexpr int POWER_OFF_DELAY_MSEC = 50; // 電源断後待機時間[msec]
+static constexpr int ECHO_TIMEOUT_MSEC	  = 20; // エコーパルス待機タイムアウト時間[msec]
+static constexpr uint64_t SONAR_INTERVAL_MICROSEC = 10; // ソナー間インターバル時間[μsec]
 
 // コンストラクタ
 HCSR04::HCSR04(PinNumber pw, PinNumber trig, PinNumber echo)
@@ -42,7 +48,7 @@ void HCSR04::finalize()
 {
 	if(!mInitialized) return;
 
-	// センサ給電中の場合、先に停止する
+	// センサ電源投入中の場合、先に停止する
 	powerOff();
 	
     // 使用したすべてのGPIOピンのI/O方向をInputに戻す
@@ -59,9 +65,9 @@ void HCSR04::powerOn()
 {
 	if(mPowerOn) return;
 
-	// 電源SW L->H : トランジスタ経由でHC-SR04へ5V給電
+	// 電源SW L->H : トランジスタ経由でHC-SR04へ5V電源投入
 	bcm2835_gpio_write(mPinPower, HIGH);
-	bcm2835_delay(100); // 状態安定まで待機
+	bcm2835_delay(POWER_ON_DELAY_MSEC); // 状態安定まで待機
 
 	// 電源投入完了
 	mPowerOn = true;
@@ -73,50 +79,53 @@ void HCSR04::powerOff()
 {
     if(!mPowerOn) return;
 
-    // 電源SW H->L : HC-SR04 給電停止
+    // 電源SW H->L : HC-SR04 電源断
     bcm2835_gpio_write(mPinPower, LOW);
-    bcm2835_delay(100); // 状態安定まで待機
+    bcm2835_delay(POWER_OFF_DELAY_MSEC); // 状態安定まで待機
 
-    // 電源投入完了
+    // 電源断完了
     mPowerOn = false;
 }
 
-double HCSR04::sonar()
+void HCSR04::pulseGen(PinNumber pin, double width)
+{
+	if(!mPowerOn) return;
+
+	bcm2835_gpio_write(pin, HIGH);
+    bcm2835_delayMicroseconds(static_cast<uint64_t>((width>0?width:0) * 1e+6));
+    bcm2835_gpio_write(pin, LOW);
+}
+
+double HCSR04::pulseMeasure(PinNumber pin)
 {
 	using clock = std::chrono::high_resolution_clock;
+
+	if(!mPowerOn) return DBL_MAX;
+	
 	int cnt = 0; // ノイズ対策のため、n回連続で同一信号を検出するまで待機
+    auto st = clock::now();
+    while(true) {
+        if(std::chrono::duration_cast<std::chrono::milliseconds>(clock::now()-st).count() > ECHO_TIMEOUT_MSEC) {
+            // タイムアウト : Low -> High
+            return DBL_MAX;
+        }
+        auto level = bcm2835_gpio_lev(mPinEcho);
+        if(level == HIGH) {
+            ++cnt;
+            if(cnt == 3) break;
+        } else {
+            cnt = 0;
+        }
+        bcm2835_delayMicroseconds(1); // busy-loop対策で1μsecは待機
+    }
 
-	if(!mPowerOn) return std::numeric_limits<double>::infinity();
-
-	// Trigを10μsecの間Highとする
-	bcm2835_gpio_write(mPinTrig, HIGH);
-	bcm2835_delayMicroseconds(10);
-	bcm2835_gpio_write(mPinTrig, LOW);
-	
-	// EchoがHighになるまで待機
+    // EchoがHigh -> Lowになる時間を計測
 	cnt = 0;
-	auto low_high_st = clock::now();
-	while(true) {
-		if(std::chrono::duration_cast<std::chrono::milliseconds>(clock::now()-low_high_st).count() > 20/*[msec]*/) {
-			// タイムアウト : Low -> High 
-			return std::numeric_limits<double>::infinity();
-		}
-		auto level = bcm2835_gpio_lev(mPinEcho);
-		if(level == HIGH) {
-			++cnt;
-			if(cnt == 3) break;
-		} else {
-			cnt = 0;
-		}
-		bcm2835_delayMicroseconds(1); // busy-loop対策で1μsecは待機
-	}
-	
-	// EchoがHigh -> Lowになる時間を計測
-	auto high_low_st = clock::now();
-	while(true) {
-        if(std::chrono::duration_cast<std::chrono::milliseconds>(clock::now()-high_low_st).count() > 20/*[msec]*/) {
+    auto high_low_st = clock::now();
+    while(true) {
+        if(std::chrono::duration_cast<std::chrono::milliseconds>(clock::now()-st).count() > ECHO_TIMEOUT_MSEC) {
             // タイムアウト : High -> Low
-            return std::numeric_limits<double>::infinity();
+            return DBL_MAX;
         }
         auto level = bcm2835_gpio_lev(mPinEcho);
         if(level == LOW) {
@@ -127,11 +136,40 @@ double HCSR04::sonar()
         }
         bcm2835_delayMicroseconds(1); // busy-loop対策で1μsecは待機
     }
-	auto high_low_ed = clock::now();
+    auto high_low_ed = clock::now();
 
-	bcm2835_delayMicroseconds(100); // 連続した読み取り時の誤動作対策に1090μsec待機	
+    return std::chrono::duration_cast<std::chrono::duration<double>>(high_low_ed - high_low_st).count(); // [μsec]
+}
 
-	double t = std::chrono::duration_cast<std::chrono::microseconds>(high_low_ed - high_low_st).count(); // [μsec]
-	double d = t * 340 / 1000 / 2; // 音速=340[msec/sec]と仮定 & t = 往復に要する時間[μsec]
-	return d; // 単位 : [mm]
+double HCSR04::sonar(bool oneShotMode)
+{
+	// 電源投入(投入済みの場合何もしない)
+	powerOn();
+
+	// Trigを10μsecの間Highとする
+	pulseGen(mPinTrig, 10e-6);
+	
+	// EchoがHighになるまで待機
+	double t = pulseMeasure(mPinEcho);
+
+	// 連続した読み取り時の誤動作対策に待機
+	bcm2835_delayMicroseconds(SONAR_INTERVAL_MICROSEC);
+
+	if(oneShotMode) {
+		// 単一読み取りモードの場合、電源断
+		powerOff();
+	} else {
+		// 連続読み取りモードの場合、タイムアウト時のみ電源再投入する
+		if(t == DBL_MAX) {
+			powerOff();
+			powerOn();
+		}
+	}
+
+	// 時間の算出
+	if(t != DBL_MAX) {
+		return t * 340 / 2; // 音速=340[m/sec]と仮定, t = 往復に要する時間[sec], 単位 : [m]
+	} else {
+		return DBL_MAX;
+	}
 }
