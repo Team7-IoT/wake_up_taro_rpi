@@ -3,6 +3,7 @@
 #include <memory>
 #include <bcm2835.h>
 #include "hcsr04drv.h"
+#include "util.h"
 
 // ピンアサイン(for Raspberry Pi 2)
 #if 1
@@ -32,14 +33,17 @@ int main(int argc, char *argv[])
 		return -1; // failed : cannot initialize bcm2835
 	}
 
+	// メディアンフィルタ生成
+	MedianFilter<double, 5> filter;
+
 	// HC-SR04ドライバ生成, 初期化
 	auto driver = std::make_unique<HCSR04>(PIN_SW, PIN_TRIG, PIN_ECHO);
 	
 	// TODO : センサ制御コード
 	while(!signaled) {
-		double dist = driver->sonar();
-		printf("%ld [mm] \n", (int)dist);
-		bcm2835_delay(50);
+		double dist_raw = driver->sonar();
+		double dist_filtered = filter.update(dist_raw); 
+		printf("%ld [mm] (raw : %ld [mm])\n", static_cast<int>(dist_raw), static_cast<int>(dist_filtered));
 	}
 
 	// ドライバ解放

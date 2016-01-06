@@ -1,6 +1,6 @@
 CC		= g++
 HEADERS	= hcsr04drv.h
-OBJS	= hcsr04drv.o  main.o
+OBJS	= hcsr04drv.o util.o  main.o
 OUT		= okoshi_driver
 
 $(OUT): $(OBJS) $(HEADERS)
