@@ -5,8 +5,8 @@
 
 static constexpr int POWER_ON_DELAY_MSEC  = 50; // 電源投入後待機時間[msec]
 static constexpr int POWER_OFF_DELAY_MSEC = 50; // 電源断後待機時間[msec]
-static constexpr int ECHO_TIMEOUT_MSEC	  = 20; // エコーパルス待機タイムアウト時間[msec]
-static constexpr uint64_t SONAR_INTERVAL_MICROSEC = 10; // ソナー間インターバル時間[μsec]
+static constexpr int ECHO_TIMEOUT_MSEC	  = 100; // エコーパルス待機タイムアウト時間[msec]
+static constexpr uint64_t SONAR_INTERVAL_MSEC = 10; // ソナー間インターバル時間[μsec]
 
 // コンストラクタ
 HCSR04::HCSR04(PinNumber pw, PinNumber trig, PinNumber echo)
@@ -116,7 +116,7 @@ double HCSR04::pulseMeasure(PinNumber pin)
         } else {
             cnt = 0;
         }
-        bcm2835_delayMicroseconds(1); // busy-loop対策で1μsecは待機
+        bcm2835_delayMicroseconds(5); // busy-loop対策で5μsecは待機
     }
 
     // EchoがHigh -> Lowになる時間を計測
@@ -134,7 +134,7 @@ double HCSR04::pulseMeasure(PinNumber pin)
         } else {
             cnt = 0;
         }
-        bcm2835_delayMicroseconds(1); // busy-loop対策で1μsecは待機
+        bcm2835_delayMicroseconds(5); // busy-loop対策で5μsecは待機
     }
     auto high_low_ed = clock::now();
 
@@ -153,7 +153,7 @@ double HCSR04::sonar(bool oneShotMode)
 	double t = pulseMeasure(mPinEcho);
 
 	// 連続した読み取り時の誤動作対策に待機
-	bcm2835_delayMicroseconds(SONAR_INTERVAL_MICROSEC);
+	bcm2835_delay(SONAR_INTERVAL_MSEC);
 
 	if(oneShotMode) {
 		// 単一読み取りモードの場合、電源断

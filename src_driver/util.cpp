@@ -3,7 +3,8 @@
 
 
 EdgeDetector::EdgeDetector(double lowThreshold, double highThreshold)
-	: mLowThreshold(lowThreshold)
+	: mStatus(Status::Unknown)
+	, mLowThreshold(lowThreshold)
 	, mHighThreshold(highThreshold)
 {
 	assert(lowThreshold < highThreshold);

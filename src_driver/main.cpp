@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 	// メディアンフィルタ生成
 	MedianFilter<5> filter;
 	// エッジ検出器生成
-	EdgeDetector detector(10e-2, 10e-2); // Low:10cm以下, High:30cm以上
+	EdgeDetector detector(5e-2, 10e-2); // Low:5cm以下, High:10cm以上
 
 	// HC-SR04ドライバ生成, 初期化
 	auto driver = std::make_unique<HCSR04>(PIN_SW, PIN_TRIG, PIN_ECHO);
@@ -50,16 +50,21 @@ int main(int argc, char *argv[])
 		// エッジ検出
 		auto st = detector.update(dist_filtered);
 		// 表示
+		bool p = false;
+		const char * status = "";
 		switch(st) {
-		case EdgeDetector::Status::Unknown 	: printf("U"); break;
-		case EdgeDetector::Status::Raise	: printf("R"); break;
-		case EdgeDetector::Status::Fall	 	: printf("F"); break;
-		case EdgeDetector::Status::Low	 	: printf("L"); break;
-		case EdgeDetector::Status::High	 	: printf("H"); break;
+		case EdgeDetector::Status::Unknown 	: status="U"; p=true; break;
+		case EdgeDetector::Status::Raise	: status="R"; p=true; break;
+		case EdgeDetector::Status::Fall	 	: status="F"; p=true; break;
+		case EdgeDetector::Status::Low	 	: status="L"; p=true; break;
+		case EdgeDetector::Status::High	 	: status="H"; p=true; break;
 		} 
-		printf(" fil : %5.3f [mm]", static_cast<int>(dist_filtered));
-		printf(" raw : %5.3f [mm]", static_cast<int>(dist_raw));
-		printf("\n");
+		if(p) {
+			printf("%s", status);
+			printf(" fil : %5.3lf [cm]", dist_filtered*100);
+			printf(" raw : %5.3lf [cm]", dist_raw*100);
+			printf("\n");
+		}
 	}
 
 	// ドライバ解放
