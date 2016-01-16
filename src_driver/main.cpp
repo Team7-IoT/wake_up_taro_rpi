@@ -5,12 +5,15 @@
 #include "hcsr04drv.h"
 #include "util.h"
 
-// ピンアサイン(for Raspberry Pi 2)
-#if 1
-static constexpr int PIN_SW   = RPI_V2_GPIO_P1_12; // 12番ピン : GPIO 18
-static constexpr int PIN_TRIG = RPI_V2_GPIO_P1_16; // 16番ピン : GPIO 23
-static constexpr int PIN_ECHO = RPI_V2_GPIO_P1_18; // 18番ピン : GPIO 24
-#endif
+// ピンアサイン(for Raspberry Pi B+, 2)
+static constexpr int PIN_SW   = RPI_GPIO_P1_12; // 12番ピン : GPIO 18
+static constexpr int PIN_TRIG = RPI_GPIO_P1_16; // 16番ピン : GPIO 23
+static constexpr int PIN_ECHO = RPI_GPIO_P1_18; // 18番ピン : GPIO 24
+
+// ピンアサインはRPi B+とRPi 2で共通(万が一異なればコンパイルエラー)
+static_assert(RPI_GPIO_P1_12 == RPI_V2_GPIO_P1_12, "");
+static_assert(RPI_GPIO_P1_16 == RPI_V2_GPIO_P1_16, "");
+static_assert(RPI_GPIO_P1_18 == RPI_V2_GPIO_P1_18, "");
 
 // シグナルハンドラ
 static volatile bool signaled = false;
