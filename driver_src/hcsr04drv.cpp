@@ -1,12 +1,7 @@
 #include "hcsr04drv.h"
-#include <bcm2835.h>
+#include "config.h"
 #include <chrono>
 #include <cfloat>
-
-static constexpr int POWER_ON_DELAY_MSEC  = 50; // 電源投入後待機時間[msec]
-static constexpr int POWER_OFF_DELAY_MSEC = 50; // 電源断後待機時間[msec]
-static constexpr int ECHO_TIMEOUT_MSEC	  = 100; // エコーパルス待機タイムアウト時間[msec]
-static constexpr uint64_t SONAR_INTERVAL_MSEC = 10; // ソナー間インターバル時間[μsec]
 
 // コンストラクタ
 HCSR04::HCSR04(PinNumber pw, PinNumber trig, PinNumber echo)
@@ -67,7 +62,7 @@ void HCSR04::powerOn()
 
 	// 電源SW L->H : トランジスタ経由でHC-SR04へ5V電源投入
 	bcm2835_gpio_write(mPinPower, HIGH);
-	bcm2835_delay(POWER_ON_DELAY_MSEC); // 状態安定まで待機
+	bcm2835_delay(SENSOR_POWER_ON_DELAY_MSEC); // 状態安定まで待機
 
 	// 電源投入完了
 	mPowerOn = true;
@@ -81,7 +76,7 @@ void HCSR04::powerOff()
 
     // 電源SW H->L : HC-SR04 電源断
     bcm2835_gpio_write(mPinPower, LOW);
-    bcm2835_delay(POWER_OFF_DELAY_MSEC); // 状態安定まで待機
+    bcm2835_delay(SENSOR_POWER_OFF_DELAY_MSEC); // 状態安定まで待機
 
     // 電源断完了
     mPowerOn = false;
@@ -105,7 +100,7 @@ double HCSR04::pulseMeasure(PinNumber pin)
 	int cnt = 0; // ノイズ対策のため、n回連続で同一信号を検出するまで待機
     auto st = clock::now();
     while(true) {
-        if(std::chrono::duration_cast<std::chrono::milliseconds>(clock::now()-st).count() > ECHO_TIMEOUT_MSEC) {
+        if(std::chrono::duration_cast<std::chrono::milliseconds>(clock::now()-st).count() > SENSOR_ECHO_TIMEOUT_MSEC) {
             // タイムアウト : Low -> High
             return DBL_MAX;
         }
@@ -123,7 +118,7 @@ double HCSR04::pulseMeasure(PinNumber pin)
 	cnt = 0;
     auto high_low_st = clock::now();
     while(true) {
-        if(std::chrono::duration_cast<std::chrono::milliseconds>(clock::now()-st).count() > ECHO_TIMEOUT_MSEC) {
+        if(std::chrono::duration_cast<std::chrono::milliseconds>(clock::now()-st).count() > SENSOR_ECHO_TIMEOUT_MSEC) {
             // タイムアウト : High -> Low
             return DBL_MAX;
         }
@@ -153,7 +148,7 @@ double HCSR04::sonar(bool oneShotMode)
 	double t = pulseMeasure(mPinEcho);
 
 	// 連続した読み取り時の誤動作対策に待機
-	bcm2835_delay(SONAR_INTERVAL_MSEC);
+	bcm2835_delay(SENSOR_SONAR_INTERVAL_MSEC);
 
 	if(oneShotMode) {
 		// 単一読み取りモードの場合、電源断

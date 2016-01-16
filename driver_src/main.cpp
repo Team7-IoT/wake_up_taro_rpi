@@ -1,19 +1,10 @@
 #include <cstdio>
 #include <csignal>
+#include <unistd.h>
 #include <memory>
-#include <bcm2835.h>
+#include "config.h"
 #include "hcsr04drv.h"
 #include "util.h"
-
-// ピンアサイン(for Raspberry Pi B+, 2)
-static constexpr int PIN_SW   = RPI_GPIO_P1_12; // 12番ピン : GPIO 18
-static constexpr int PIN_TRIG = RPI_GPIO_P1_16; // 16番ピン : GPIO 23
-static constexpr int PIN_ECHO = RPI_GPIO_P1_18; // 18番ピン : GPIO 24
-
-// ピンアサインはRPi B+とRPi 2で共通(万が一異なればコンパイルエラー)
-static_assert(RPI_GPIO_P1_12 == RPI_V2_GPIO_P1_12, "");
-static_assert(RPI_GPIO_P1_16 == RPI_V2_GPIO_P1_16, "");
-static_assert(RPI_GPIO_P1_18 == RPI_V2_GPIO_P1_18, "");
 
 // シグナルハンドラ
 static volatile bool signaled = false;
@@ -39,7 +30,7 @@ int main(int argc, char *argv[])
 	// メディアンフィルタ生成
 	MedianFilter<5> filter;
 	// エッジ検出器生成
-	EdgeDetector detector(5e-2, 10e-2); // Low:5cm以下, High:10cm以上
+	EdgeDetector detector(THRESHOLD_DISTNCE_LOW_MM/1000.0, THRESHOLD_DISTNCE_HIGH_MM/1000.0);
 
 	// HC-SR04ドライバ生成, 初期化
 	auto driver = std::make_unique<HCSR04>(PIN_SW, PIN_TRIG, PIN_ECHO);
