@@ -41,6 +41,7 @@ int main(int argc, char *argv[])
 		double dist_raw = driver->sonar();
 		// フィルタ
 		double dist_filtered = filter.update(dist_raw);
+		if(!filter.isFull()) continue; // 最初の数サンプルは破棄
 		// エッジ検出
 		auto st = detector.update(dist_filtered);
 		// 表示

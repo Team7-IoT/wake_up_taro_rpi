@@ -32,6 +32,10 @@ public:
 		return *(buf.begin() + N/2);
 	}
 
+	bool isFull()const noexcept { 
+		return mFull; 
+	}
+
 private:
 	std::array<double, N> mBuffer;
 	size_t mRingPos;
