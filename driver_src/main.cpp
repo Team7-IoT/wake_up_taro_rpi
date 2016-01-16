@@ -17,6 +17,18 @@ static void signal_handler(int sig)
 // main関数
 int main(int argc, char *argv[])
 {
+	bool isSimpleMode = false;
+
+	// 引数解析
+	int opt;
+    while((opt = getopt(argc, argv, "s")) != -1) {
+		switch(opt) {
+		case 's':
+			isSimpleMode = true;
+			break;
+		}
+	}
+
 	// シグナルハンドラ登録
 	signal(SIGHUP,  signal_handler);
 	signal(SIGINT,  signal_handler);
@@ -44,21 +56,30 @@ int main(int argc, char *argv[])
 		if(!filter.isFull()) continue; // 最初の数サンプルは破棄
 		// エッジ検出
 		auto st = detector.update(dist_filtered);
-		// 表示
-		bool p = false;
-		const char * status = "";
-		switch(st) {
-		case EdgeDetector::Status::Unknown 	: status="U"; p=true; break;
-		case EdgeDetector::Status::Raise	: status="R"; p=true; break;
-		case EdgeDetector::Status::Fall	 	: status="F"; p=true; break;
-		case EdgeDetector::Status::Low	 	: status="L"; p=true; break;
-		case EdgeDetector::Status::High	 	: status="H"; p=true; break;
-		} 
-		if(p) {
-			printf("%s", status);
-			printf(" fil : %5.3lf [cm]", dist_filtered*100);
-			printf(" raw : %5.3lf [cm]", dist_raw*100);
-			printf("\n");
+
+		if(isSimpleMode) {
+			switch(st) {
+			case EdgeDetector::Status::Raise:	fputc('0', stdout);	fflush(stdout); break;
+            case EdgeDetector::Status::Fall:	fputc('1', stdout);	fflush(stdout); break;
+			default: /* do-nothing */ break;
+			}
+		} else {
+			// 表示
+			bool p = false;
+			const char * status = "";
+			switch(st) {
+			case EdgeDetector::Status::Unknown 	: status="U"; p=true; break;
+			case EdgeDetector::Status::Raise	: status="R"; p=true; break;
+			case EdgeDetector::Status::Fall	 	: status="F"; p=true; break;
+			case EdgeDetector::Status::Low	 	: status="L"; p=true; break;
+			case EdgeDetector::Status::High	 	: status="H"; p=true; break;
+			} 
+			if(p) {
+				printf("%s", status);
+				printf(" fil : %5.3lf [cm]", dist_filtered*100);
+				printf(" raw : %5.3lf [cm]", dist_raw*100);
+				printf("\n");
+			}
 		}
 	}
 
