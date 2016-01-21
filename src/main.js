@@ -23,22 +23,4 @@ bleno.on(BLENO_CONSTANT.ADDRESS_CHANGE, function(error) {
   }
 });
 
-
-bleno.on(BLENO_CONSTANT.SERVICE_SET, function(error) {
-    console.log('on -> servicesSet: ' + (error ? 'error ' + error : 'success'));
-});
-
-bleno.on(BLENO_CONSTANT.SERVICE_SET_ERROR, function(error) {
-    console.log('on -> servicesSetError: ' + (error ? 'error ' + error : 'success'));
-});
-
-
-bleno.on(BLENO_CONSTANT.ACCEPT, function(clientAddress) {
-    console.log('on -> accept : ' + clientAddress);
-});
-
-bleno.on(BLENO_CONSTANT.DISCONNECT, function(clientAddress) {
-    console.log('on -> disconnect : ' + clientAddress);
-});
-
 module.exports = bleno;

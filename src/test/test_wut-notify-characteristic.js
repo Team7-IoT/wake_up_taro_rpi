@@ -1,14 +1,26 @@
 var assert = require('assert');
 var WUTNotifyCharacteristic  = require('../wut-notify-characteristic');
-
-console.log('--- Module Check ---');
-assert.ok(WUTNotifyCharacteristic);
-
-console.log('------ test ---- start --------');
-
 var target = new WUTNotifyCharacteristic();
-target.onUnsubscribe();
 
 
+describe('MODULE: wut-notify-characteristic', function() {
+  describe('Constructor: "properties"', function() {
+    it('"properties" is set correctly', function() {
+      assert.equal(target.properties[0], 'notify');
+    });
+    it('"uuid" is set correctly', function() {
+      assert.equal(target.uuid, '7BD98C73E66148B5B09396C4EC897B9C');
+    });
+  });
+  describe('METHOD: onSubscribe', function() {
+    it('Later');
+  });
+  describe('METHOD: onUnsubscribe', function() {
+    it('"_updateValueCallback" is null', function() {
+      target.onUnsubscribe();
+      assert.equal(target._updateValueCallback, null);
+    });
+  });
 
-console.log('------ test ---- end --------');
+});
+
