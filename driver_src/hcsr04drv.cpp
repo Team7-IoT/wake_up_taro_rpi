@@ -161,10 +161,13 @@ double HCSR04::sonar(bool oneShotMode)
 		}
 	}
 
-	// 時間の算出
+	double d = DBL_MAX;
+	// 距離の算出
 	if(t != DBL_MAX) {
-		return t * 340 / 2; // 音速=340[m/sec]と仮定, t = 往復に要する時間[sec], 単位 : [m]
-	} else {
-		return DBL_MAX;
+		// 音速=340[m/sec]と仮定, t = 往復に要する時間[sec], 単位 : [m]
+		d = t * 340 / 2;
+		// 距離が1cmいないの場合、正常に取得できない扱いとする。
+		if(d < 0.01) d = DBL_MAX;
 	}
+	return d;
 }
