@@ -1,6 +1,6 @@
 #include "util.h"
 #include <cassert>
-
+#include <cfloat>
 
 EdgeDetector::EdgeDetector(double lowThreshold, double highThreshold)
 	: mStatus(Status::Unknown)
@@ -12,7 +12,9 @@ EdgeDetector::EdgeDetector(double lowThreshold, double highThreshold)
 
 EdgeDetector::Level EdgeDetector::level(double value)const
 {
-	if(value <= mLowThreshold) {
+	if(value == DBL_MAX) {
+		return Level::Undefined;
+	} else if(value <= mLowThreshold) {
 		return Level::Low;
 	} else if(value >= mHighThreshold) {
 		return Level::High;

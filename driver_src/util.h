@@ -55,7 +55,7 @@ public:
 	};
 	enum class Level {
 		Low,		// v <= L
-		Undefined, 	// L < v < H
+		Undefined, 	// L < v < H or INF
 		High,		// H <= v
 	};
 
