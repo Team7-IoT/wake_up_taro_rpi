@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cfloat>
 #include <csignal>
 #include <unistd.h>
 #include <memory>
@@ -74,7 +75,7 @@ int main(int argc, char *argv[])
 			case EdgeDetector::Status::Low	 	: status="L"; p=true; break;
 			case EdgeDetector::Status::High	 	: status="H"; p=true; break;
 			} 
-			if(p) {
+			if(p && dist_filtered != DBL_MAX) {
 				printf("%s", status);
 				printf(" fil : %5.3lf [cm]", dist_filtered*100);
 				printf(" raw : %5.3lf [cm]", dist_raw*100);
