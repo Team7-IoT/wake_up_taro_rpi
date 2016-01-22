@@ -1,19 +1,19 @@
 var bleno = require('bleno');
 var WUTService = require('./wut-service');
-
 var primaryService = new WUTService();
+var BLENO_CONSTANT = require('./bleno-constant');
 
-bleno.on('stateChange', function(state) {
+bleno.on(BLENO_CONSTANT.POWERED_ON, function(state) {
   console.log('on -> stateChange: ' + state);
 
-  if (state === 'poweredOn') {
+  if (state === BLENO_CONSTANT.POWERED_ON) {
     bleno.startAdvertising('wake_up_taro', [primaryService.uuid]);
   } else {
     bleno.stopAdvertising();
   }
 });
 
-bleno.on('advertisingStart', function(error) {
+bleno.on(BLENO_CONSTANT.ADDRESS_CHANGE, function(error) {
   console.log('on -> advertisingStart: ' + (error ? 'error ' + error : 'success'));
 
   if (!error) {
@@ -23,20 +23,4 @@ bleno.on('advertisingStart', function(error) {
   }
 });
 
-
-bleno.on('servicesSet', function(error) {
-	console.log('on -> servicesSet: ' + (error ? 'error ' + error : 'success'));
-});
-
-bleno.on('servicesSetError', function(error) {
-    console.log('on -> servicesSetError: ' + (error ? 'error ' + error : 'success'));
-});
-
-
-bleno.on('accept', function(clientAddress) {
-	console.log('on -> accept : ' + clientAddress);
-});
-
-bleno.on('disconnect', function(clientAddress) {
-    console.log('on -> disconnect : ' + clientAddress);
-});
+module.exports = bleno;

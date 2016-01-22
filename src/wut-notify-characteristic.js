@@ -3,7 +3,8 @@ var bleno = require('bleno');
 
 var Descriptor = bleno.Descriptor;
 var Characteristic = bleno.Characteristic;
-
+var ChildProcess = require('child_process');
+var driver = ChildProcess.spawn('./okoshi_driver', ['-s']);
 
 var WUTNotifyCharacteristic = function() {
   WUTNotifyCharacteristic.super_.call(this, {
@@ -15,13 +16,15 @@ var WUTNotifyCharacteristic = function() {
 util.inherits(WUTNotifyCharacteristic, Characteristic);
 
 WUTNotifyCharacteristic.prototype.onSubscribe = function(maxValueSize, updateValueCallback) {
-  console.log('on -> subscribe');
   this._updateValueCallback = updateValueCallback;
-  setTimeout(
-  	function(self) {
- 		console.log('on -> timer');
-  		self._updateValueCallback(new Buffer([0, 1, 2, 3]));
-  	}, 2000, this);
+  function(self) {
+    driver.stdout.on('data', (data) => {
+      if (data.length === 1) {
+        console.log('stdout: ' +  data);
+        self._updateValueCallback(new Buffer(data));
+      }
+    });
+  }
 };
 
 WUTNotifyCharacteristic.prototype.onUnsubscribe = function() {
