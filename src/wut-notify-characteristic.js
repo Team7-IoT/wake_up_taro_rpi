@@ -16,20 +16,22 @@ var WUTNotifyCharacteristic = function() {
 util.inherits(WUTNotifyCharacteristic, Characteristic);
 
 WUTNotifyCharacteristic.prototype.onSubscribe = function(maxValueSize, updateValueCallback) {
+  console.log('on -> subscribe');
   this._updateValueCallback = updateValueCallback;
-  function(self) {
-    driver.stdout.on('data', (data) => {
-      if (data.length === 1) {
-        console.log('stdout: ' +  data);
-        self._updateValueCallback(new Buffer(data));
-      }
-    });
-  }
+  var self = this;
+  driver.stdout.removeAllListeners('data');
+  driver.stdout.on('data', (data) => {
+    console.log('stdout: ' +  data);
+    self._updateValueCallback(new Buffer(data));
+  });
 };
 
 WUTNotifyCharacteristic.prototype.onUnsubscribe = function() {
   console.log('on -> unsubscribe');
-
+  driver.stdout.removeAllListeners('data');
+  console.log('on -> removeListeners');
   this._updateValueCallback = null;
 };
+
 module.exports = WUTNotifyCharacteristic;
+
