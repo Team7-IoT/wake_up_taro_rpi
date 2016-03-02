@@ -13,7 +13,11 @@ describe('MODULE: wut-notify-characteristic', function() {
     });
   });
   describe('METHOD: onSubscribe', function() {
-    it('Later');
+    it('"_updateValueCallback" is not null', function() {
+      var value = 1;
+      target.onSubscribe(0,value);
+      assert.equal(target._updateValueCallback, value);
+    });
   });
   describe('METHOD: onUnsubscribe', function() {
     it('"_updateValueCallback" is null', function() {
@@ -21,6 +25,5 @@ describe('MODULE: wut-notify-characteristic', function() {
       assert.equal(target._updateValueCallback, null);
     });
   });
-
 });
 

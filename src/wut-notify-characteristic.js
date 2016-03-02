@@ -4,7 +4,7 @@ var bleno = require('bleno');
 var Descriptor = bleno.Descriptor;
 var Characteristic = bleno.Characteristic;
 var ChildProcess = require('child_process');
-var driver = ChildProcess.spawn('./okoshi_driver', ['-s']);
+var driver = ChildProcess.spawn('/home/rpi/wake_up_taro_rpi/src/okoshi_driver', ['-s']);
 
 var WUTNotifyCharacteristic = function() {
   WUTNotifyCharacteristic.super_.call(this, {
