@@ -1,6 +1,7 @@
 var bleno = require('bleno');
 var WUTService = require('./wut-service');
 var primaryService = new WUTService();
+var BLENO_CONSTANT = require('./bleno-constant');
 
 bleno.on('stateChange', function(state) {
   console.log('on -> stateChange: ' + state);
